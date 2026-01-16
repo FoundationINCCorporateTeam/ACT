@@ -471,3 +471,119 @@ function is_active($pattern) {
     $current = basename($_SERVER['PHP_SELF'], '.php');
     return strpos($current, $pattern) === 0;
 }
+
+/**
+ * Calculate the user's current study streak
+ * 
+ * @param string $userId The user ID
+ * @return int The number of consecutive days studied
+ */
+function calculate_study_streak($userId) {
+    $user = db_read_user($userId, 'user');
+    if (empty($user)) {
+        $user = auth_user();
+    }
+    
+    $studyDays = $user['study_days'] ?? [];
+    if (empty($studyDays)) {
+        return 0;
+    }
+    
+    rsort($studyDays);
+    $streak = 0;
+    $today = date('Y-m-d');
+    $yesterday = date('Y-m-d', strtotime('-1 day'));
+    
+    // Check if studied today or yesterday to maintain streak
+    if (!in_array($today, $studyDays) && !in_array($yesterday, $studyDays)) {
+        return 0;
+    }
+    
+    $checkDate = in_array($today, $studyDays) ? $today : $yesterday;
+    
+    foreach ($studyDays as $day) {
+        if ($day === $checkDate) {
+            $streak++;
+            $checkDate = date('Y-m-d', strtotime($checkDate . ' -1 day'));
+        } elseif (strtotime($day) < strtotime($checkDate)) {
+            break;
+        }
+    }
+    
+    return $streak;
+}
+
+/**
+ * Format study time in hours/minutes
+ * 
+ * @param int $minutes Total minutes
+ * @return string Formatted time
+ */
+function format_study_time($minutes) {
+    if ($minutes < 60) {
+        return $minutes . 'm';
+    }
+    
+    $hours = floor($minutes / 60);
+    $mins = $minutes % 60;
+    
+    if ($mins === 0) {
+        return $hours . 'h';
+    }
+    
+    return $hours . 'h ' . $mins . 'm';
+}
+
+/**
+ * Get level title based on level number
+ * 
+ * @param int $level The level number
+ * @return string The level title
+ */
+function get_level_title($level) {
+    $titles = [
+        1 => 'Beginner',
+        2 => 'Novice',
+        3 => 'Apprentice',
+        4 => 'Student',
+        5 => 'Scholar',
+        6 => 'Advanced',
+        7 => 'Expert',
+        8 => 'Master',
+        9 => 'Grandmaster',
+        10 => 'ACT Champion'
+    ];
+    
+    if ($level >= 10) {
+        return 'ACT Champion';
+    }
+    
+    return $titles[$level] ?? 'Beginner';
+}
+
+/**
+ * Get XP threshold for a specific level
+ * 
+ * @param int $level The level number
+ * @return int The XP needed to reach this level
+ */
+function get_xp_for_level($level) {
+    $thresholds = [
+        1 => 0,
+        2 => 100,
+        3 => 300,
+        4 => 600,
+        5 => 1000,
+        6 => 1500,
+        7 => 2100,
+        8 => 2800,
+        9 => 3600,
+        10 => 4500
+    ];
+    
+    if ($level >= 10) {
+        return 4500 + (($level - 10) * 1000);
+    }
+    
+    return $thresholds[$level] ?? 0;
+}
