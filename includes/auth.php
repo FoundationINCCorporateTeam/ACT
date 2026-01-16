@@ -399,6 +399,15 @@ function get_csrf_token() {
 }
 
 /**
+ * Alias for get_csrf_token
+ * 
+ * @return string The CSRF token
+ */
+function csrf_token() {
+    return get_csrf_token();
+}
+
+/**
  * Require authentication - redirects to login if not authenticated
  */
 function require_auth() {

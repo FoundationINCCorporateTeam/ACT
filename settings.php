@@ -93,20 +93,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (!password_verify($password, $user['password_hash'])) {
             flash('error', 'Password is incorrect.');
         } else {
-            // Delete all user data
-            $dataDir = DATA_DIR . '/' . $userId;
-            if (is_dir($dataDir)) {
-                $files = glob($dataDir . '/*');
-                foreach ($files as $file) {
-                    unlink($file);
-                }
-                rmdir($dataDir);
+            // Delete all user data files
+            $pattern = DATA_PATH . '/user_' . $userId . '_*.json';
+            $files = glob($pattern);
+            foreach ($files as $file) {
+                unlink($file);
             }
             
             // Delete user from users list
-            $users = db_read('users');
+            $users = db_read('users.json');
             $users = array_filter($users, fn($u) => $u['id'] !== $userId);
-            db_save('users', array_values($users));
+            db_write('users.json', array_values($users));
             
             // Logout
             session_destroy();
@@ -293,8 +290,8 @@ include __DIR__ . '/includes/header.php';
                 <div>
                     <label for="default_model" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Default AI Model</label>
                     <select name="default_model" id="default_model" class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                        <?php foreach (AI_MODELS as $model): ?>
-                        <option value="<?= $model['id'] ?>" <?= ($settings['default_model'] ?? 'deepseek/deepseek-v3.2:thinking') === $model['id'] ? 'selected' : '' ?>><?= $model['name'] ?></option>
+                        <?php foreach (AI_MODELS as $modelId => $modelName): ?>
+                        <option value="<?= h($modelId) ?>" <?= ($settings['default_model'] ?? 'deepseek/deepseek-v3.2:thinking') === $modelId ? 'selected' : '' ?>><?= h($modelName) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>

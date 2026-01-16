@@ -252,3 +252,41 @@ function db_init() {
 
 // Initialize on include
 db_init();
+
+/**
+ * Save/update a user's profile data
+ * 
+ * @param int $userId The user ID
+ * @param array $userData The user data to save
+ * @return bool True on success
+ */
+function db_save_user($userId, $userData) {
+    $users = db_read('users.json');
+    
+    foreach ($users as &$user) {
+        if ($user['id'] == $userId) {
+            $user = array_merge($user, $userData);
+            $user['updated_at'] = date('Y-m-d H:i:s');
+            return db_write('users.json', $users);
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * Get the data directory path with optional subdirectory
+ * 
+ * @param string $subdir Optional subdirectory
+ * @return string The full path
+ */
+function get_data_path($subdir = '') {
+    $path = DATA_PATH;
+    if ($subdir) {
+        $path .= '/' . $subdir;
+        if (!is_dir($path)) {
+            mkdir($path, 0755, true);
+        }
+    }
+    return $path;
+}
